@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nutri Sprouts Label Generator</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h1>Nutri Sprouts Labels</h1>
+            <p>Enter orders and generate print-ready PDF labels in the browser.</p>
+          </div>
+          <button id="generatePdf" type="button">Generate PDF</button>
+        </header>
+
+        <div class="table-wrap">
+          <table aria-label="Label order entries">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Weight</th>
+                <th>Packed</th>
+                <th>Qty</th>
+                <th>Barcode</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="orderRows"></tbody>
+          </table>
+        </div>
+
+        <footer class="actions">
+          <button id="addRow" type="button">Add Row</button>
+          <span id="status">Ready.</span>
+        </footer>
+      </section>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,160 @@
+:root {
+  color-scheme: light;
+  --bg: #fffaf3;
+  --panel: #ffffff;
+  --ink: #1f2520;
+  --muted: #687267;
+  --line: #ded4c7;
+  --brown: #8a5529;
+  --green: #2f5d50;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: Arial, Helvetica, sans-serif;
+  color: var(--ink);
+  background: var(--bg);
+}
+
+.shell {
+  min-height: 100vh;
+  padding: 24px;
+  display: grid;
+  place-items: start center;
+}
+
+.workspace {
+  width: min(1120px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 18px 44px rgba(64, 44, 28, 0.13);
+  padding: 22px;
+}
+
+.topbar,
+.actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+h1 {
+  margin: 0 0 6px;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+p,
+#status {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+button {
+  border: 0;
+  border-radius: 8px;
+  padding: 12px 16px;
+  font-weight: 700;
+  background: var(--green);
+  color: #ffffff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button.secondary,
+#addRow {
+  background: #efe6da;
+  color: #442817;
+}
+
+button.danger {
+  background: #f4e2dc;
+  color: #8a271c;
+  padding: 9px 12px;
+}
+
+.table-wrap {
+  margin: 22px 0 16px;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+}
+
+th {
+  text-align: left;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0;
+  color: #ffffff;
+  background: var(--brown);
+  padding: 10px;
+}
+
+td {
+  border-top: 1px solid #eadfd1;
+  padding: 9px;
+  background: #fffdf9;
+}
+
+select,
+input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid #d5c8b9;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: inherit;
+  background: #ffffff;
+}
+
+td:nth-child(2),
+td:nth-child(4) {
+  width: 100px;
+}
+
+td:nth-child(3) {
+  width: 160px;
+}
+
+td:nth-child(5) {
+  width: 160px;
+}
+
+.barcode {
+  font-weight: 700;
+  color: #442817;
+}
+
+@media (max-width: 700px) {
+  .shell {
+    padding: 14px;
+  }
+
+  .workspace {
+    padding: 16px;
+  }
+
+  .topbar,
+  .actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  button {
+    width: 100%;
+  }
+}
