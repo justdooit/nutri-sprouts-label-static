@@ -62,7 +62,7 @@ document.getElementById("generatePdf").addEventListener("click", generateFromFor
 addRow({
   product: "Mung Beans",
   weight: 250,
-  packed: todayIso(),
+  packed: todayLabel(),
   quantity: 1,
 });
 
@@ -75,7 +75,12 @@ function addRow(initial = {}) {
       </select>
     </td>
     <td><input class="weight" type="number" min="1" step="1" value="${initial.weight || 250}" /></td>
-    <td><input class="packed" type="date" value="${initial.packed || todayIso()}" /></td>
+    <td>
+      <div class="date-cell">
+        <input class="packed" type="text" value="${initial.packed || todayLabel()}" inputmode="numeric" />
+        <button class="secondary clear-date" type="button">Blank</button>
+      </div>
+    </td>
     <td><input class="quantity" type="number" min="1" step="1" value="${initial.quantity || 1}" /></td>
     <td class="barcode"></td>
     <td><button class="danger" type="button">Remove</button></td>
@@ -85,6 +90,9 @@ function addRow(initial = {}) {
   tr.querySelector(".danger").addEventListener("click", () => {
     tr.remove();
     refreshBarcodes();
+  });
+  tr.querySelector(".clear-date").addEventListener("click", () => {
+    tr.querySelector(".packed").value = "";
   });
   tr.querySelectorAll("select,input").forEach((el) => el.addEventListener("input", refreshBarcodes));
   refreshBarcodes();
@@ -101,11 +109,11 @@ function generateFromForm() {
   const labels = [];
   for (const tr of rowsEl.querySelectorAll("tr")) {
     const row = readRow(tr);
-    if (!row.product || !row.weight || !row.packed || row.quantity <= 0) continue;
+    if (!row.product || !row.weight || row.quantity <= 0) continue;
     const label = {
       product: row.product,
       weight: `${row.weight} gm`,
-      packed: formatDateForLabel(row.packed),
+      packed: row.packed ? formatDateForLabel(row.packed) : "",
       barcode: makeBarcode(row.product, row.weight),
     };
     for (let i = 0; i < row.quantity; i += 1) labels.push(label);
@@ -343,7 +351,27 @@ function todayIso() {
 }
 
 function formatDateForLabel(isoDate) {
-  const [year, month, day] = isoDate.split("-");
+  const value = String(isoDate || "").trim();
+  if (!value) return "";
+
+  let match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (match) {
+    const [, year, month, day] = match;
+    return `${day}/${month}/${year}`;
+  }
+
+  match = value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+  if (match) {
+    let [, day, month, year] = match;
+    if (year.length === 2) year = `20${year}`;
+    return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
+  }
+
+  return value;
+}
+
+function todayLabel() {
+  const [year, month, day] = todayIso().split("-");
   return `${day}/${month}/${year}`;
 }
 

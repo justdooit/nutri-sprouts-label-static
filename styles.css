@@ -121,6 +121,18 @@ input {
   background: #ffffff;
 }
 
+.date-cell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.date-cell .secondary {
+  min-height: 38px;
+  padding: 8px 10px;
+}
+
 td:nth-child(2),
 td:nth-child(4) {
   width: 100px;
