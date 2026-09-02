@@ -139,7 +139,9 @@ td:nth-child(4) {
 }
 
 td:nth-child(3) {
-  width: 160px;
+  /* increased from 160px to give the date input more room */
+  width: 240px;
+  min-width: 160px;
 }
 
 td:nth-child(5) {
@@ -149,6 +151,12 @@ td:nth-child(5) {
 .barcode {
   font-weight: 700;
   color: #442817;
+}
+
+/* ensure the date input itself can grow if the cell allows it */
+.date-cell .packed {
+  min-width: 180px;
+  max-width: 100%;
 }
 
 @media (max-width: 700px) {
@@ -167,6 +175,12 @@ td:nth-child(5) {
   }
 
   button {
+    width: 100%;
+  }
+
+  /* on small screens allow date input to shrink to fit the layout */
+  .date-cell .packed {
+    min-width: 0;
     width: 100%;
   }
 }
