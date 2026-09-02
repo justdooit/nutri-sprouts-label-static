@@ -140,7 +140,7 @@ td:nth-child(4) {
 
 td:nth-child(3) {
   /* increased from 160px to give the date input more room */
-  width: 240px;
+  width: 200px;
   min-width: 160px;
 }
 
@@ -155,7 +155,7 @@ td:nth-child(5) {
 
 /* ensure the date input itself can grow if the cell allows it */
 .date-cell .packed {
-  min-width: 180px;
+  min-width: 140px;
   max-width: 100%;
 }
 
