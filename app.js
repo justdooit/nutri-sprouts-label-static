@@ -10,6 +10,7 @@ const PRODUCTS = [
   ["Whole Masoor", "MSR"],
   ["Fenugreek Seeds", "FNS"],
   ["Ragi Millet", "RGM"],
+  ["Mixed Sprouts", "MIX"],
 ];
 
 const PRODUCT_CODE_BY_KEY = Object.fromEntries(
