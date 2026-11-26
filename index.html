@@ -69,6 +69,23 @@
           <span id="bestBeforeStatus">Ready.</span>
         </footer>
       </section>
+      <details class="workspace master-data">
+        <summary>Master Data</summary>
+        <p>Edit sprout names, or click the pencil to unlock a product code. Cancel restores its saved code. Save to update both forms. Changes are saved only in this browser on this device.</p>
+        <form id="masterForm">
+          <div class="table-wrap">
+            <table aria-label="Sprout master data">
+              <thead><tr><th>Sprout name</th><th>Product code</th><th></th></tr></thead>
+              <tbody id="masterRows"></tbody>
+            </table>
+          </div>
+          <div class="actions">
+            <button id="addProduct" class="secondary" type="button">Add Sprout</button>
+            <button type="submit">Save Master Data</button>
+          </div>
+        </form>
+        <p id="masterStatus" role="status" aria-live="polite"></p>
+      </details>
     </main>
     <script src="app.js"></script>
   </body>

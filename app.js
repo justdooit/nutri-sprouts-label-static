@@ -1,4 +1,4 @@
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   ["Mung Beans", "MGB"],
   ["Horse Gram", "HGM"],
   ["Chana", "CHN"],
@@ -13,7 +13,10 @@ const PRODUCTS = [
   ["Mixed Sprouts", "MIX"],
 ];
 
-const PRODUCT_CODE_BY_KEY = Object.fromEntries(
+const MASTER_STORAGE_KEY = "nutri-sprouts-products-v1";
+let masterLoadMessage = "";
+let PRODUCTS = loadProducts();
+let PRODUCT_CODE_BY_KEY = Object.fromEntries(
   PRODUCTS.map(([name, code]) => [normaliseProduct(name), code]),
 );
 
@@ -69,12 +72,139 @@ for (const form of FORMS) {
   addRow(form);
 }
 
+const masterRowsEl = document.getElementById("masterRows");
+const masterStatusEl = document.getElementById("masterStatus");
+PRODUCTS.forEach((product) => addMasterRow(product));
+masterStatusEl.textContent = masterLoadMessage;
+document.getElementById("addProduct").addEventListener("click", () => addMasterRow());
+document.getElementById("masterForm").addEventListener("submit", saveMasterData);
+
+function validateProducts(products) {
+  if (!Array.isArray(products) || !products.length) throw new Error("Keep at least one sprout.");
+  const names = new Set();
+  const codes = new Set();
+  for (const entry of products) {
+    if (!Array.isArray(entry) || entry.length !== 2 || entry.some((v) => typeof v !== "string")) {
+      throw new Error("Each sprout needs a name and barcode code.");
+    }
+    const [name, code] = entry;
+    const key = normaliseProduct(name);
+    if (!name.trim() || !key || !/^[\x20-\x7E]+$/.test(name)) {
+      throw new Error("Use a sprout name with letters or numbers and standard English characters.");
+    }
+    if (!/^[A-Z]{3}$/.test(code)) throw new Error("Each barcode code must contain three letters (A-Z).");
+    if (names.has(key)) throw new Error(`Duplicate sprout name: ${name}.`);
+    if (codes.has(code)) throw new Error(`Duplicate barcode code: ${code}.`);
+    names.add(key);
+    codes.add(code);
+  }
+  return products;
+}
+
+function loadProducts() {
+  try {
+    const saved = localStorage.getItem(MASTER_STORAGE_KEY);
+    return saved === null ? DEFAULT_PRODUCTS.map((entry) => [...entry]) : validateProducts(JSON.parse(saved));
+  } catch {
+    masterLoadMessage = "Saved master data could not be loaded. Using the original products; saving will try again.";
+    return DEFAULT_PRODUCTS.map((entry) => [...entry]);
+  }
+}
+
+function addMasterRow([name = "", code = ""] = []) {
+  const tr = document.createElement("tr");
+  tr.dataset.originalName = name;
+  tr.dataset.savedCode = code;
+  tr.innerHTML = `
+    <td><input class="master-name" aria-label="Sprout name" required value="${escapeHtml(name)}" /></td>
+    <td><div class="code-editor">
+      <input class="master-code" aria-label="Product code" required maxlength="3" value="${escapeHtml(code)}" ${code ? "readonly" : ""} />
+      <button class="secondary edit-code" type="button" aria-label="Edit product code" title="Edit product code" ${code ? "" : "hidden"}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m16 3 5 5-13 13H3v-5L16 3Z"/><path d="m13 6 5 5"/></svg>
+      </button>
+      <button class="secondary cancel-code" type="button" hidden>Cancel</button>
+    </div></td>
+    <td><button class="danger" type="button">Remove</button></td>`;
+  tr.querySelector(".edit-code").addEventListener("click", () => {
+    const input = tr.querySelector(".master-code");
+    input.readOnly = false;
+    tr.querySelector(".edit-code").hidden = true;
+    tr.querySelector(".cancel-code").hidden = false;
+    input.focus();
+    input.select();
+  });
+  tr.querySelector(".cancel-code").addEventListener("click", () => {
+    tr.querySelector(".master-code").value = tr.dataset.savedCode;
+    lockProductCode(tr);
+    masterStatusEl.textContent = "Product code restored. Other unsaved changes still need to be saved.";
+  });
+  tr.querySelector(".danger").addEventListener("click", () => {
+    tr.remove();
+    masterStatusEl.textContent = "Unsaved changes. Save Master Data to apply.";
+  });
+  tr.querySelectorAll("input").forEach((input) => input.addEventListener("input", () => {
+    masterStatusEl.textContent = "Unsaved changes. Save Master Data to apply.";
+  }));
+  masterRowsEl.appendChild(tr);
+  masterStatusEl.textContent = "Unsaved changes. Save Master Data to apply.";
+}
+
+function lockProductCode(tr) {
+  tr.querySelector(".master-code").readOnly = true;
+  tr.querySelector(".edit-code").hidden = false;
+  tr.querySelector(".cancel-code").hidden = true;
+}
+
+function saveMasterData(event) {
+  event.preventDefault();
+  const rows = [...masterRowsEl.querySelectorAll("tr")];
+  const nextProducts = rows.map((tr) => [tr.querySelector(".master-name").value.trim(), tr.querySelector(".master-code").value.trim().toUpperCase()]);
+  try {
+    validateProducts(nextProducts);
+  } catch (error) {
+    masterStatusEl.textContent = error.message;
+    return;
+  }
+  try {
+    localStorage.setItem(MASTER_STORAGE_KEY, JSON.stringify(nextProducts));
+  } catch {
+    masterStatusEl.textContent = "Could not save in this browser. No changes were applied. Allow browser storage and try again.";
+    return;
+  }
+  const renamed = new Map(rows.filter((tr) => tr.dataset.originalName).map((tr) => [tr.dataset.originalName, tr.querySelector(".master-name").value.trim()]));
+  PRODUCTS = nextProducts;
+  PRODUCT_CODE_BY_KEY = Object.fromEntries(PRODUCTS.map(([name, code]) => [normaliseProduct(name), code]));
+  let cleared = false;
+  for (const form of FORMS) {
+    for (const select of form.rowsEl.querySelectorAll(".product")) {
+      const selected = renamed.get(select.value) || "";
+      select.innerHTML = `<option value="">Select a sprout</option>` + productOptions();
+      select.value = selected;
+      if (!selected) cleared = true;
+    }
+    refreshBarcodes(form);
+  }
+  rows.forEach((tr, i) => {
+    tr.dataset.originalName = nextProducts[i][0];
+    tr.querySelector(".master-name").value = nextProducts[i][0];
+    tr.querySelector(".master-code").value = nextProducts[i][1];
+    tr.dataset.savedCode = nextProducts[i][1];
+    lockProductCode(tr);
+  });
+  masterStatusEl.textContent = "Saved in this browser. Both forms updated." +
+    (cleared ? " A removed sprout was selected; choose a replacement before generating its labels." : "");
+}
+
+function productOptions() {
+  return PRODUCTS.map(([name]) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("");
+}
+
 function addRow(form, initial = {}) {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>
       <select class="product">
-        ${PRODUCTS.map(([name]) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join("")}
+        ${productOptions()}
       </select>
     </td>
     <td><input class="weight" type="number" min="1" step="1" value="${initial.weight || 250}" /></td>
@@ -109,6 +239,10 @@ function refreshBarcodes(form) {
 }
 
 function generateFromForm(form) {
+  if ([...form.rowsEl.querySelectorAll(".product")].some((select) => !select.value)) {
+    form.statusEl.textContent = "Choose a sprout for every row before generating labels.";
+    return;
+  }
   const labels = [];
   for (const tr of form.rowsEl.querySelectorAll("tr")) {
     const row = readRow(tr);
@@ -308,7 +442,8 @@ function drawCode128Barcode(x, y, width, height, value, barColor) {
 }
 
 function makeBarcode(product, weight) {
-  const code = PRODUCT_CODE_BY_KEY[normaliseProduct(product)] || normaliseProduct(product).slice(0, 3);
+  const code = PRODUCT_CODE_BY_KEY[normaliseProduct(product)];
+  if (!code) return "";
   return `NS${code}${Math.max(0, Math.floor(Number(weight || 0)))}`;
 }
 
