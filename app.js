@@ -54,20 +54,22 @@ const CODE_128_PATTERNS = [
   "114131", "311141", "411131", "211412", "211214", "211232", "2331112",
 ];
 
-const rowsEl = document.getElementById("orderRows");
-const statusEl = document.getElementById("status");
+const FORMS = [
+  { rowsEl: document.getElementById("orderRows"), statusEl: document.getElementById("status"),
+    addId: "addRow", generateId: "generatePdf", dateHeading: "PACKED ON", daysAhead: 0,
+    filename: "nutri-sprouts-labels.pdf" },
+  { rowsEl: document.getElementById("bestBeforeRows"), statusEl: document.getElementById("bestBeforeStatus"),
+    addId: "addBestBeforeRow", generateId: "generateBestBeforePdf", dateHeading: "BEST BEFORE", daysAhead: 14,
+    filename: "nutri-sprouts-best-before-labels.pdf" },
+];
 
-document.getElementById("addRow").addEventListener("click", () => addRow());
-document.getElementById("generatePdf").addEventListener("click", generateFromForm);
+for (const form of FORMS) {
+  document.getElementById(form.addId).addEventListener("click", () => addRow(form));
+  document.getElementById(form.generateId).addEventListener("click", () => generateFromForm(form));
+  addRow(form);
+}
 
-addRow({
-  product: "Mung Beans",
-  weight: 250,
-  packed: todayLabel(),
-  quantity: 1,
-});
-
-function addRow(initial = {}) {
+function addRow(form, initial = {}) {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td>
@@ -78,7 +80,7 @@ function addRow(initial = {}) {
     <td><input class="weight" type="number" min="1" step="1" value="${initial.weight || 250}" /></td>
     <td>
       <div class="date-cell">
-        <input class="packed" type="text" value="${initial.packed || todayLabel()}" inputmode="numeric" />
+        <input class="packed" type="text" value="${escapeHtml(initial.packed ?? todayLabel(form.daysAhead))}" inputmode="numeric" />
         <button class="secondary clear-date" type="button">Blank</button>
       </div>
     </td>
@@ -86,32 +88,33 @@ function addRow(initial = {}) {
     <td class="barcode"></td>
     <td><button class="danger" type="button">Remove</button></td>
   `;
-  rowsEl.appendChild(tr);
+  form.rowsEl.appendChild(tr);
   tr.querySelector(".product").value = initial.product || PRODUCTS[0][0];
   tr.querySelector(".danger").addEventListener("click", () => {
     tr.remove();
-    refreshBarcodes();
+    refreshBarcodes(form);
   });
   tr.querySelector(".clear-date").addEventListener("click", () => {
     tr.querySelector(".packed").value = "";
   });
-  tr.querySelectorAll("select,input").forEach((el) => el.addEventListener("input", refreshBarcodes));
-  refreshBarcodes();
+  tr.querySelectorAll("select,input").forEach((el) => el.addEventListener("input", () => refreshBarcodes(form)));
+  refreshBarcodes(form);
 }
 
-function refreshBarcodes() {
-  for (const tr of rowsEl.querySelectorAll("tr")) {
+function refreshBarcodes(form) {
+  for (const tr of form.rowsEl.querySelectorAll("tr")) {
     const data = readRow(tr);
     tr.querySelector(".barcode").textContent = makeBarcode(data.product, data.weight);
   }
 }
 
-function generateFromForm() {
+function generateFromForm(form) {
   const labels = [];
-  for (const tr of rowsEl.querySelectorAll("tr")) {
+  for (const tr of form.rowsEl.querySelectorAll("tr")) {
     const row = readRow(tr);
     if (!row.product || !row.weight || row.quantity <= 0) continue;
     const label = {
+      dateHeading: form.dateHeading,
       product: row.product,
       weight: `${row.weight} gm`,
       packed: row.packed ? formatDateForLabel(row.packed) : "",
@@ -121,7 +124,7 @@ function generateFromForm() {
   }
 
   if (!labels.length) {
-    statusEl.textContent = "Add at least one valid row.";
+    form.statusEl.textContent = "Add at least one valid row.";
     return;
   }
 
@@ -130,12 +133,12 @@ function generateFromForm() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "nutri-sprouts-labels.pdf";
+  link.download = form.filename;
   document.body.appendChild(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  statusEl.textContent = `Created ${labels.length} label${labels.length === 1 ? "" : "s"}.`;
+  form.statusEl.textContent = `Created ${labels.length} label${labels.length === 1 ? "" : "s"}.`;
 }
 
 function readRow(tr) {
@@ -198,7 +201,7 @@ function drawPage(labels) {
     content += drawTextLeft(innerX + 55, (weightPillY + 25) + 1.6 * MM, fit(weightNumber(label.weight), 8), 10, FIELD_TEXT);
     content += drawTextLeft((innerX + 45) + weightPillW + 1.4 * MM, (weightPillY + 25) + 1.5 * MM, "gm", 10, UNIT_TEXT);
 
-    content += drawTextLeft(innerX, yTop - 24.4 * MM, "PACKED ON", 6, "#F7E5CC");
+    content += drawTextLeft(innerX, yTop - 24.4 * MM, label.dateHeading || "PACKED ON", 6, "#F7E5CC");
     content += drawRoundedRect(innerX + 45, packedPillY + 32, (35 * MM) - pad * 2, pillHeight, pillHeight / 2, FIELD_FILL, FIELD_STROKE);
     content += drawTextLeft(innerX + 55, (packedPillY + 32) + 1.85 * MM, fit(label.packed, 18), 10, FIELD_TEXT);
 
@@ -347,33 +350,29 @@ function escapePdf(value) {
   return String(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function todayIso() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function formatDateForLabel(isoDate) {
-  const value = String(isoDate || "").trim();
+function formatDateForLabel(dateValue) {
+  const value = String(dateValue || "").trim();
   if (!value) return "";
 
+  let year, month, day;
   let match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (match) {
-    const [, year, month, day] = match;
-    return `${day}/${month}/${year}`;
-  }
-
-  match = value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
-  if (match) {
-    let [, day, month, year] = match;
+    [, year, month, day] = match;
+  } else {
+    match = value.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})$/);
+    if (!match) return value;
+    [, day, month, year] = match;
     if (year.length === 2) year = `20${year}`;
-    return `${day.padStart(2, "0")}/${month.padStart(2, "0")}/${year}`;
   }
-
-  return value;
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  if (!months[Number(month) - 1]) return value;
+  return `${day.padStart(2, "0")}-${months[Number(month) - 1]}-${year.slice(-2)}`;
 }
 
-function todayLabel() {
-  const [year, month, day] = todayIso().split("-");
-  return `${day}/${month}/${year}`;
+function todayLabel(daysAhead = 0) {
+  const date = new Date();
+  date.setDate(date.getDate() + daysAhead);
+  return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
 }
 
 function escapeHtml(value) {

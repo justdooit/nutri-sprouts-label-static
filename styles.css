@@ -26,6 +26,8 @@ body {
   padding: 24px;
   display: grid;
   place-items: start center;
+  align-content: start;
+  gap: 24px;
 }
 
 .workspace {
@@ -52,7 +54,8 @@ h1 {
 }
 
 p,
-#status {
+#status,
+#bestBeforeStatus {
   margin: 0;
   color: var(--muted);
   font-size: 14px;
@@ -70,7 +73,8 @@ button {
 }
 
 button.secondary,
-#addRow {
+#addRow,
+#addBestBeforeRow {
   background: #efe6da;
   color: #442817;
 }

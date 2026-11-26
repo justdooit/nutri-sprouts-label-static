@@ -12,7 +12,7 @@
         <header class="topbar">
           <div>
             <h1>Nutri Sprouts Labels</h1>
-            <p>Enter orders and generate print-ready PDF labels in the browser.</p>
+            <p>Packed date labels</p>
           </div>
           <button id="generatePdf" type="button">Generate PDF</button>
         </header>
@@ -36,6 +36,37 @@
         <footer class="actions">
           <button id="addRow" type="button">Add Row</button>
           <span id="status">Ready.</span>
+        </footer>
+      </section>
+
+      <section class="workspace">
+        <header class="topbar">
+          <div>
+            <h1>Best Before Labels</h1>
+            <p>Best-before dates default to two weeks from today.</p>
+          </div>
+          <button id="generateBestBeforePdf" type="button">Generate PDF</button>
+        </header>
+
+        <div class="table-wrap">
+          <table aria-label="Best-before label order entries">
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Weight</th>
+                <th>Best Before</th>
+                <th>Qty</th>
+                <th>Barcode</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bestBeforeRows"></tbody>
+          </table>
+        </div>
+
+        <footer class="actions">
+          <button id="addBestBeforeRow" type="button">Add Row</button>
+          <span id="bestBeforeStatus">Ready.</span>
         </footer>
       </section>
     </main>
